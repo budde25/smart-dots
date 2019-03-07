@@ -18,20 +18,21 @@ function setup() {
   play = false;
   obstacles = [];
   console.log(population);
+  frameRate(800);
 }
 
 function draw() {
   background(222);
 
   if (population.checkDead()) {
-    population.findMaxSteps();
+    population.setMaxSteps();
     population.calculateFitness();
     population.generateMatingPool();
     population.generateChild();
     gen++;
 
   } else {
-    population.update();
+    population.move();
     population.show();
     goal.show();
   }
@@ -55,5 +56,13 @@ function draw() {
 }
 
 function mousePressed() {
-  obstacles.push(new Obstacle(mouseX, mouseY, 300, 10));
+  obstacles.push(new Obstacle(mouseX, mouseY));
+}
+
+function mouseReleased() {
+  
+
+  obstacles[obstacles.length].setHeight(mouseY);
+  obstacles[obstacles.length].setWidth(mouseX);
+  console.log('her');
 }

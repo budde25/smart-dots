@@ -3,98 +3,129 @@ class Population {
   public population: DNA[] = [];
   public matingPool: DNA[] = [];
 
+  // Default muation rate is 0.01
   public mutationRate = 0.01;
-  public maxSteps: number;
+  public moves: number;
   public size: number;
 
   constructor(size: number, moves: number) {
-    this.maxSteps = moves;
+    this.moves = moves;
     this.size = size;
 
+    // Fills array with new DNA
     for (let i = 0; i < this.size; i++) {
-      this.population.push(new DNA(this.size));
+      this.population.push(new DNA(this.moves));
     }
   }
 
-  public update = () => {
-    for (let i = 0; i < this.population.length; i++) {
-      this.population[i].update();
-    }
-  }
+  /**
+   * Runs update function on the entire poplution
+   */
+  public move = () => { for (const pop of this.population) { pop.move(); }};
 
-  public show = () => {
-    for (let i = 0; i < this.population.length; i++) {
-      this.population[i].show();
-    }
-  }
+  /**
+   * Runs show function on the entire population
+   */
+  public show = () => { for (const pop of this.population) { pop.show(); }};
 
-  public checkDead = () => {
-    for (let i = 0; i < this.population.length; i++) {
-      if (!this.population[i].isDead()) {
-        return false;
+  /**
+   * checks to see is alive or dead
+   * returns true if all dead, false otherwise
+   */
+  public checkDead = (): boolean => {
+    for (const pop of this.population) {
+    if (!pop.isDead()) {
+      return false;
       }
     }
     return true;
   }
 
-  // Sets max moves to that of the winning Dna
-  public findMaxSteps = () => {
-    for (let i = 0; i < this.population.length; i++) {
-      if (this.population[i].isOnGoal()) {
-        if (this.population[i].getSteps() < this.maxSteps) {
-          this.maxSteps = this.population[i].getSteps();
-        }
+  /**
+   * Sets max moves to that of the winning Dna
+   */
+  public setMaxSteps = () => {
+
+    let maxSteps = this.moves;
+
+    // Gets the steps of the best dot the touches the goal
+    for (const pop of this.population) {
+      if (pop.isOnGoal() && pop.getSteps() < maxSteps) {
+        maxSteps = pop.getSteps();
       }
     }
-    for (let i = 0; i < this.population.length; i++) {
-      this.population[i].setSteps(this.maxSteps);
+
+    // Sets the max steps for the entire population
+    for (const pop of this.population) {
+      pop.setSteps(maxSteps);
     }
   }
 
-  public getMaxFitness = () => {
+  /**
+   *  Finds the best fitness in the population
+   *  returns the best fitness number
+   */
+  public getMaxFitness = (): number => {
     let maxFitness = 0;
-    for (let i = 0; i < this.population.length; i++) {
-      if (this.population[i].getFitness() > maxFitness) {
-        maxFitness = this.population[i].getFitness();
+
+    for (const pop of this.population) {
+      if (pop.getFitness() > maxFitness) {
+        maxFitness = pop.getFitness();
       }
-    return maxFitness;
+      return maxFitness;
     }
   }
 
-  // Finds the best of the generation
-  //public findChampion = () => {
-    // TODO implement
-  //}
+  /**
+   * find the best DNA of the population
+   * returns the most fit DNA
+   */
+  public findChampion = () => {
+    let champion = new DNA(this.size);
+    for (const pop of this.population) {
+      if (pop.getFitness() > champion.getFitness()) {
+        champion = pop;
+      }
+    }
 
-  // Calculates fitness levels of each DNA obejct
-  public calculateFitness = () => {
-    this.population.forEach((item) => {
-      item.calculateFitness();
-    });
+    champion = champion.clone();
+    champion.setColor(color('black'));
+    return champion;
   }
 
-  // Generates a mating pool based on the fitness level
+  /**
+   * Calculates the fitness of each DNA in the population
+   */
+  public calculateFitness = () => { for (const pop of this.population) { pop.calculateFitness(); }};
+
+  /**
+   * Generates a mating pool based on the fitness level
+   */
   public generateMatingPool = () => {
 
-    let maxFitness = this.getMaxFitness();
+    const maxFitness = this.getMaxFitness();
 
-    for (let i = 0; i < this.population.length; i++) {
+    for (const pop of this.population) {
 
-      const fitnessNormal: number = map(this.population[i].getFitness(), 0, maxFitness, 0 , 1);
+      const fitnessNormal: number = map(pop.getFitness(), 0, maxFitness, 0 , 1);
       const max: number = Math.floor(fitnessNormal * 10); // Arbitrary multiplier
 
       for (let j = 0; j < max; j++) {
-        this.matingPool.push(this.population[i]);
+        this.matingPool.push(pop);
       }
     }
   }
 
-  // Generates a child based on the combined parrents
+  /**
+   * Generates the children and the champion and add them to the population
+   */
   public generateChild = () => {
-    for (let i = 0; i < this.population.length; i++) {
-      let parrentA: DNA = this.matingPool[Math.floor(Math.random() * this.matingPool.length)];
-      let parrentB : DNA= this.matingPool[Math.floor(Math.random() * this.matingPool.length)];
-      let child: DNA = parrentA.breed(parrentB);
+    this.population[0] = this.findChampion();
+
+    for (let i = 1; i < this.population.length; i++) {
+      const parrentA: DNA = this.matingPool[Math.floor(Math.random() * this.matingPool.length)];
+      const parrentB: DNA = this.matingPool[Math.floor(Math.random() * this.matingPool.length)];
+      const child: DNA = parrentA.breed(parrentB);
       child.mutate(this.mutationRate);
       this.population[i] = child;
     }

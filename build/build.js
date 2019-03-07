@@ -1,52 +1,56 @@
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
+}
 var DNA = (function () {
     function DNA(size) {
         var _this = this;
+        this.colors = [color('red'), color('green'), color('blue'), color('yellow')];
         this.isDead = function () { return _this.dead; };
         this.getPosition = function () { return _this.position; };
         this.getFitness = function () { return _this.fitness; };
         this.getSteps = function () { return _this.steps; };
         this.isOnGoal = function () { return _this.onGoal; };
+        this.getColor = function () { return _this.color; };
         this.setDead = function (dead) { return _this.dead = dead; };
         this.setSteps = function (steps) { return _this.steps = steps; };
+        this.setColor = function (color) { return _this.color = color; };
         this.checkDead = function () {
             if (!_this.dead) {
-                if (_this.genes.length < _this.steps) {
-                }
-                if (_this.position.x < 3 || _this.position.x > width - 3 || _this.position.y < 3 || _this.position.y > height - 3) {
+                if ((_this.position.x < 3 || _this.position.x > width - 3 || _this.position.y < 3 || _this.position.y > height - 3) ||
+                    (_this.genes.length <= _this.steps)) {
                     _this.dead = true;
                 }
-                if (dist(_this.position.x, _this.position.y, _this.goal.getPosition().x, _this.goal.getPosition().y) < _this.goal.getRadius()) {
+                if (dist(_this.position.x, _this.position.y, goal.getPosition().x, goal.getPosition().y) < goal.getRadius()) {
                     _this.onGoal = true;
                     _this.dead = true;
                 }
             }
         };
         this.show = function () {
-            fill(0);
+            noStroke();
+            fill(_this.color);
             ellipse(_this.position.x, _this.position.y, _this.radius, _this.radius);
         };
-        this.update = function () {
+        this.move = function () {
             _this.checkDead();
             if (!_this.dead) {
-                if (_this.genes.length > _this.steps) {
-                    _this.acceleration = _this.genes[_this.steps];
-                }
-                else {
-                    _this.dead = true;
-                }
-                _this.velocity.add(_this.acceleration);
-                _this.velocity.limit(5);
+                _this.acceleration = _this.genes[_this.steps];
+                _this.velocity.add(_this.acceleration).limit(4.5);
                 _this.position.add(_this.velocity);
                 _this.steps++;
             }
         };
         this.calculateFitness = function () {
-            var distanceToGoal = dist(_this.position.x, _this.position.y, _this.goal.getPosition().x, _this.goal.getPosition().y);
+            var distanceToGoal = dist(_this.position.x, _this.position.y, goal.getPosition().x, goal.getPosition().y);
             _this.fitness = 1 / (distanceToGoal * distanceToGoal);
-            _this.fitness = _this.fitness / (_this.steps);
+            if (_this.onGoal) {
+                _this.fitness = _this.fitness + (_this.fitness / (_this.steps));
+            }
         };
         this.breed = function (parrentB) {
-            var child = new DNA(_this.genes.length);
+            var child = new DNA(_this.size);
             for (var i = 0; i < _this.genes.length; i++) {
                 if (i % 2 === 1) {
                     child.genes[i] = _this.genes[i];
@@ -54,6 +58,14 @@ var DNA = (function () {
                 else {
                     child.genes[i] = parrentB.genes[i];
                 }
+            }
+            child.setColor(lerpColor(_this.color, parrentB.color, Math.random()));
+            return child;
+        };
+        this.clone = function () {
+            var child = new DNA(_this.size);
+            for (var i = 0; i < _this.genes.length; i++) {
+                child.genes[i] = _this.genes[i];
             }
             return child;
         };
@@ -64,9 +76,9 @@ var DNA = (function () {
                 }
             }
         };
-        this.goal = new Goal();
         this.size = size;
-        this.radius = 4;
+        this.radius = 8;
+        this.color = this.colors[getRandomInt(0, this.colors.length)];
         this.position = createVector(width / 2, height - 20);
         this.velocity = createVector(0, 0);
         this.acceleration = createVector(0, 0);
@@ -96,11 +108,19 @@ var Goal = (function () {
     return Goal;
 }());
 var Obstacle = (function () {
-    function Obstacle(posx, posy, obsWidth, obsHeight) {
+    function Obstacle(posx, posy) {
         var _this = this;
+        this.setWidth = function (obsWidth) { return _this.obsWidth = obsWidth; };
+        this.setHeight = function (obsHeight) { return _this.obsHeight = obsHeight; };
         this.show = function () {
-            fill(127);
-            rect(_this.position.x, _this.position.y, _this.obsWidth, _this.obsHeight);
+            if (_this.obsHeight == null && _this.obsWidth == null) {
+                fill(127);
+                rect(_this.position.x, _this.position.y, -_this.position.x + mouseX, -_this.position.y + mouseY);
+            }
+            else {
+                fill('green');
+                rect(_this.position.x, _this.position.y, -_this.position.x + _this.obsWidth, -_this.position.y + _this.obsHeight);
+            }
         };
         this.isTouching = function (location) {
             return location.x > _this.position.x &&
@@ -109,8 +129,8 @@ var Obstacle = (function () {
                 location.y < _this.position.y + _this.obsHeight;
         };
         this.position = createVector(posx, posy);
-        this.obsWidth = obsWidth;
-        this.obsHeight = obsHeight;
+        this.obsWidth = null;
+        this.obsHeight = null;
     }
     return Obstacle;
 }());
@@ -120,62 +140,76 @@ var Population = (function () {
         this.population = [];
         this.matingPool = [];
         this.mutationRate = 0.01;
-        this.update = function () {
-            for (var i = 0; i < _this.population.length; i++) {
-                _this.population[i].update();
-            }
-        };
-        this.show = function () {
-            for (var i = 0; i < _this.population.length; i++) {
-                _this.population[i].show();
-            }
-        };
+        this.move = function () { for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+            var pop_1 = _a[_i];
+            pop_1.move();
+        } };
+        this.show = function () { for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+            var pop_2 = _a[_i];
+            pop_2.show();
+        } };
         this.checkDead = function () {
-            for (var i = 0; i < _this.population.length; i++) {
-                if (!_this.population[i].isDead()) {
+            for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+                var pop_3 = _a[_i];
+                if (!pop_3.isDead()) {
                     return false;
                 }
             }
             return true;
         };
-        this.findMaxSteps = function () {
-            for (var i = 0; i < _this.population.length; i++) {
-                if (_this.population[i].isOnGoal()) {
-                    if (_this.population[i].getSteps() < _this.maxSteps) {
-                        _this.maxSteps = _this.population[i].getSteps();
-                    }
+        this.setMaxSteps = function () {
+            var maxSteps = _this.moves;
+            for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+                var pop_4 = _a[_i];
+                if (pop_4.isOnGoal() && pop_4.getSteps() < maxSteps) {
+                    maxSteps = pop_4.getSteps();
                 }
             }
-            for (var i = 0; i < _this.population.length; i++) {
-                _this.population[i].setSteps(_this.maxSteps);
+            for (var _b = 0, _c = _this.population; _b < _c.length; _b++) {
+                var pop_5 = _c[_b];
+                pop_5.setSteps(maxSteps);
             }
         };
         this.getMaxFitness = function () {
             var maxFitness = 0;
-            for (var i = 0; i < _this.population.length; i++) {
-                if (_this.population[i].getFitness() > maxFitness) {
-                    maxFitness = _this.population[i].getFitness();
+            for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+                var pop_6 = _a[_i];
+                if (pop_6.getFitness() > maxFitness) {
+                    maxFitness = pop_6.getFitness();
                 }
                 return maxFitness;
             }
         };
-        this.calculateFitness = function () {
-            _this.population.forEach(function (item) {
-                item.calculateFitness();
-            });
+        this.findChampion = function () {
+            var champion = new DNA(_this.size);
+            for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+                var pop_7 = _a[_i];
+                if (pop_7.getFitness() > champion.getFitness()) {
+                    champion = pop_7;
+                }
+            }
+            champion = champion.clone();
+            champion.setColor(color('black'));
+            return champion;
         };
+        this.calculateFitness = function () { for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+            var pop_8 = _a[_i];
+            pop_8.calculateFitness();
+        } };
         this.generateMatingPool = function () {
             var maxFitness = _this.getMaxFitness();
-            for (var i = 0; i < _this.population.length; i++) {
-                var fitnessNormal = map(_this.population[i].getFitness(), 0, maxFitness, 0, 1);
+            for (var _i = 0, _a = _this.population; _i < _a.length; _i++) {
+                var pop_9 = _a[_i];
+                var fitnessNormal = map(pop_9.getFitness(), 0, maxFitness, 0, 1);
                 var max_1 = Math.floor(fitnessNormal * 10);
                 for (var j = 0; j < max_1; j++) {
-                    _this.matingPool.push(_this.population[i]);
+                    _this.matingPool.push(pop_9);
                 }
             }
         };
         this.generateChild = function () {
-            for (var i = 0; i < _this.population.length; i++) {
+            _this.population[0] = _this.findChampion();
+            for (var i = 1; i < _this.population.length; i++) {
                 var parrentA = _this.matingPool[Math.floor(Math.random() * _this.matingPool.length)];
                 var parrentB = _this.matingPool[Math.floor(Math.random() * _this.matingPool.length)];
                 var child = parrentA.breed(parrentB);
@@ -183,10 +217,10 @@ var Population = (function () {
                 _this.population[i] = child;
             }
         };
-        this.maxSteps = moves;
+        this.moves = moves;
         this.size = size;
         for (var i = 0; i < this.size; i++) {
-            this.population.push(new DNA(this.size));
+            this.population.push(new DNA(this.moves));
         }
     }
     return Population;
@@ -205,18 +239,19 @@ function setup() {
     play = false;
     obstacles = [];
     console.log(population);
+    frameRate(800);
 }
 function draw() {
     background(222);
     if (population.checkDead()) {
-        population.findMaxSteps();
+        population.setMaxSteps();
         population.calculateFitness();
         population.generateMatingPool();
         population.generateChild();
         gen++;
     }
     else {
-        population.update();
+        population.move();
         population.show();
         goal.show();
     }
@@ -235,6 +270,11 @@ function draw() {
     }
 }
 function mousePressed() {
-    obstacles.push(new Obstacle(mouseX, mouseY, 300, 10));
+    obstacles.push(new Obstacle(mouseX, mouseY));
+}
+function mouseReleased() {
+    obstacles[obstacles.length].setHeight(mouseY);
+    obstacles[obstacles.length].setWidth(mouseX);
+    console.log('her');
 }
 //# sourceMappingURL=build.js.map
