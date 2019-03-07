@@ -110,23 +110,28 @@ var Goal = (function () {
 var Obstacle = (function () {
     function Obstacle(posx, posy) {
         var _this = this;
-        this.setWidth = function (obsWidth) { return _this.obsWidth = obsWidth; };
-        this.setHeight = function (obsHeight) { return _this.obsHeight = obsHeight; };
+        this.setWidth = function (X) { return _this.obsWidth = -_this.position.x + X; };
+        this.setHeight = function (Y) { return _this.obsHeight = -_this.position.y + Y; };
         this.show = function () {
             if (_this.obsHeight == null && _this.obsWidth == null) {
-                fill(127);
+                fill(169, 169, 169, 200);
                 rect(_this.position.x, _this.position.y, -_this.position.x + mouseX, -_this.position.y + mouseY);
             }
             else {
-                fill('green');
-                rect(_this.position.x, _this.position.y, -_this.position.x + _this.obsWidth, -_this.position.y + _this.obsHeight);
+                fill(169, 169, 169);
+                rect(_this.position.x, _this.position.y, _this.obsWidth, _this.obsHeight);
             }
         };
         this.isTouching = function (location) {
-            return location.x > _this.position.x &&
-                location.x < _this.position.x + _this.obsWidth &&
-                location.y > _this.position.y &&
-                location.y < _this.position.y + _this.obsHeight;
+            if (_this.obsWidth != null && _this.obsHeight != null) {
+                return location.x > _this.position.x &&
+                    location.x < _this.position.x + _this.obsWidth &&
+                    location.y > _this.position.y &&
+                    location.y < _this.position.y + _this.obsHeight;
+            }
+            else {
+                return false;
+            }
         };
         this.position = createVector(posx, posy);
         this.obsWidth = null;
@@ -255,26 +260,28 @@ function draw() {
         population.show();
         goal.show();
     }
-    for (var i = 0; i < population.population.length; i++) {
-        var pos = population.population[i].getPosition();
-        for (var j = 0; j < obstacles.length; j++) {
-            if (obstacles[j].isTouching(pos)) {
-                population.population[i].setDead(true);
+    for (var _i = 0, _a = population.population; _i < _a.length; _i++) {
+        var dna = _a[_i];
+        var pos = dna.getPosition();
+        for (var _b = 0, obstacles_1 = obstacles; _b < obstacles_1.length; _b++) {
+            var obs = obstacles_1[_b];
+            if (obs.isTouching(pos)) {
+                dna.setDead(true);
             }
         }
     }
     fill(0);
     text('generation: ' + gen, 10, 20);
-    for (var i = 0; i < obstacles.length; i++) {
-        obstacles[i].show();
+    for (var _c = 0, obstacles_2 = obstacles; _c < obstacles_2.length; _c++) {
+        var obs = obstacles_2[_c];
+        obs.show();
     }
 }
 function mousePressed() {
     obstacles.push(new Obstacle(mouseX, mouseY));
 }
 function mouseReleased() {
-    obstacles[obstacles.length].setHeight(mouseY);
-    obstacles[obstacles.length].setWidth(mouseX);
-    console.log('her');
+    obstacles[obstacles.length - 1].setHeight(mouseY);
+    obstacles[obstacles.length - 1].setWidth(mouseX);
 }
 //# sourceMappingURL=build.js.map

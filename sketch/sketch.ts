@@ -37,11 +37,11 @@ function draw() {
     goal.show();
   }
 
-  for (let i = 0; i < population.population.length; i++) {
-    let pos = population.population[i].getPosition();
-    for (let j = 0; j < obstacles.length; j++) {
-      if(obstacles[j].isTouching(pos)) {
-        population.population[i].setDead(true);
+  for (const dna of population.population) {
+    const pos = dna.getPosition();
+    for (const obs of obstacles) {
+      if (obs.isTouching(pos)) {
+        dna.setDead(true);
       }
     }
   }
@@ -49,8 +49,8 @@ function draw() {
   fill(0);
   text('generation: ' + gen, 10, 20);
 
-  for (let i = 0; i < obstacles.length; i++) {
-      obstacles[i].show();
+  for (const obs of obstacles) {
+      obs.show();
   }
 
 }
@@ -60,9 +60,6 @@ function mousePressed() {
 }
 
 function mouseReleased() {
-  
-
-  obstacles[obstacles.length].setHeight(mouseY);
-  obstacles[obstacles.length].setWidth(mouseX);
-  console.log('her');
+  obstacles[obstacles.length - 1].setHeight(mouseY);
+  obstacles[obstacles.length - 1].setWidth(mouseX);
 }
