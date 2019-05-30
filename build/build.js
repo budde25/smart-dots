@@ -110,8 +110,8 @@ var Goal = (function () {
 var Obstacle = (function () {
     function Obstacle(posx, posy) {
         var _this = this;
-        this.setWidth = function (X) { return _this.obsWidth = -_this.position.x + X; };
-        this.setHeight = function (Y) { return _this.obsHeight = -_this.position.y + Y; };
+        this.setWidth = function (X) { return _this.obsWidth = Math.abs(-_this.position.x + X); };
+        this.setHeight = function (Y) { return _this.obsHeight = Math.abs(-_this.position.y + Y); };
         this.show = function () {
             if (_this.obsHeight == null && _this.obsWidth == null) {
                 fill(169, 169, 169, 200);
@@ -257,8 +257,7 @@ function draw() {
     }
     else {
         population.move();
-        population.show();
-        goal.show();
+        show();
     }
     for (var _i = 0, _a = population.population; _i < _a.length; _i++) {
         var dna = _a[_i];
@@ -270,12 +269,16 @@ function draw() {
             }
         }
     }
+}
+function show() {
+    population.show();
     fill(0);
     text('generation: ' + gen, 10, 20);
-    for (var _c = 0, obstacles_2 = obstacles; _c < obstacles_2.length; _c++) {
-        var obs = obstacles_2[_c];
+    for (var _i = 0, obstacles_2 = obstacles; _i < obstacles_2.length; _i++) {
+        var obs = obstacles_2[_i];
         obs.show();
     }
+    goal.show();
 }
 function mousePressed() {
     obstacles.push(new Obstacle(mouseX, mouseY));

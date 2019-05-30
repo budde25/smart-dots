@@ -22,6 +22,7 @@ function setup() {
 }
 
 function draw() {
+  // Draws the background every frame
   background(222);
 
   if (population.checkDead()) {
@@ -33,8 +34,7 @@ function draw() {
 
   } else {
     population.move();
-    population.show();
-    goal.show();
+    show();
   }
 
   for (const dna of population.population) {
@@ -45,14 +45,23 @@ function draw() {
       }
     }
   }
+}
 
+function show() {
+  // Shows dots
+  population.show();
+
+  // Shows generation text
   fill(0);
   text('generation: ' + gen, 10, 20);
 
+  // Shows obstacles
   for (const obs of obstacles) {
       obs.show();
   }
 
+  // Shows goal
+  goal.show();
 }
 
 function mousePressed() {

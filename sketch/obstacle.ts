@@ -10,8 +10,8 @@ class Obstacle {
     this.obsHeight = null;
   }
 
-  public setWidth = (X: number) => this.obsWidth = -this.position.x + X;
-  public setHeight = (Y: number) => this.obsHeight = -this.position.y + Y;
+  public setWidth = (X: number) => this.obsWidth = Math.abs(-this.position.x + X);
+  public setHeight = (Y: number) => this.obsHeight = Math.abs(-this.position.y + Y);
 
  public show = () => {
    if (this.obsHeight == null && this.obsWidth == null ) {
@@ -26,9 +26,9 @@ class Obstacle {
  public isTouching = (location: p5.Vector): boolean => {
   if (this.obsWidth != null && this.obsHeight != null) {
     return location.x > this.position.x &&
-        location.x < this.position.x + this.obsWidth &&
-        location.y > this.position.y &&
-        location.y < this.position.y + this.obsHeight;
+      location.x < this.position.x + this.obsWidth &&
+      location.y > this.position.y &&
+      location.y < this.position.y + this.obsHeight;
     } else {
       return false;
     }
